@@ -1,76 +1,93 @@
-import React from 'react'
-
-import Pagination from './Pagination'
-import Row from './Row'
-import Search from './Search'
+import React, { Fragment } from "react";
+import { getTotalNumberOfPages, search } from "./logic";
+import PaginationBox from "./PaginationBox";
+import Table from "./Table";
+import SearchBox from "./SearchBox";
 
 class DataTable extends React.Component {
   state = {
-    rows: this.props.rows,
-    currentPageNumber: 0,
-    totalNumberOfPages: this.calculateTotalNumberOfPages(this.props.rows)
+    currentPageNumber: 1,
+    rowsPerPage: 5,
+    searchText: "",
+    rowsFound: [],
+  };
+
+  componentDidMount() {
+    const rows = this.props.rows;
+    this.setState(() => ({
+      rowsFound: search(rows, this.state.searchText),
+    }));
   }
 
-  static defaultProps = {
-    rowsPerPage: 40
-  }
-
-  calculateTotalNumberOfPages(rows) {
-    const { rowsPerPage } = this.props
-    if (rowsPerPage == 0) return 0
-    return Math.ceil(rows.length / rowsPerPage)
-  }
-
-  search(event) {
-    const { rows } = this.props
-    const text = event.target.value
-    let rowsFound = rows
-
-    if (text) {
-      rowsFound = rows.filter((row) => {
-        return row.name1.toLowerCase().search(text.toLowerCase()) > -1 ||
-         (row.email && row.email.toLowerCase().search(text.toLowerCase()) > -1)
-      })
+  componentDidUpdate(prevProps, prevState) {
+    if (this.state.searchText !== prevState.searchText) {
+      const rows = this.props.rows;
+      this.setState({
+        rowsFound: search(rows, this.state.searchText),
+      });
     }
-
-    this.setState({
-      rows: rowsFound,
-      currentPageNumber: 0,
-      totalNumberOfPages: this.calculateTotalNumberOfPages(rowsFound)
-    })
+    if (this.state.rowsPerPage !== prevState.rowsPerPage) {
+      const totalNumberOfPages = getTotalNumberOfPages(
+        this.state.rowsFound,
+        this.state.rowsPerPage
+      );
+      if (this.state.currentPageNumber > totalNumberOfPages) {
+        this.setState({
+          currentPageNumber: 1,
+        });
+      }
+    }
   }
 
-  changeToPageNumber(pageNumber) {
-    this.setState({ currentPageNumber: pageNumber })
-  }
+  setCurrentPageNumber = (currentPageNumber) => {
+    this.setState(() => ({
+      currentPageNumber,
+    }));
+  };
 
-  rowsInPageNumber(pageNumber) {
-    const { rowsPerPage } = this.props
-    const startIndex = pageNumber * rowsPerPage
-    return [startIndex, startIndex + rowsPerPage]
-  }
+  updateSearchText = (searchText) => {
+    this.setState(() => ({
+      searchText,
+    }));
+  };
+
+  setRowsPerPage = (rowsPerPage) => {
+    this.setState(() => ({
+      rowsPerPage,
+    }));
+  };
 
   render() {
-    const { rows, currentPageNumber, totalNumberOfPages } = this.state
-    const rowsToRender = rows
-      .map(row => <Row key={row.per_id} row={row} />)
-      .slice(...this.rowsInPageNumber(currentPageNumber))
+    const {
+      rowsFound,
+      searchText,
+      currentPageNumber,
+      rowsPerPage,
+    } = this.state;
 
-    return(
-      <div>
-        <Search onSearch={this.search.bind(this)} />
-        <table>
-          <tbody>
-            { rowsToRender }
-          </tbody>
-        </table>
-        <Pagination
+    const totalNumberOfPages = getTotalNumberOfPages(rowsFound, rowsPerPage);
+
+    return (
+      <Fragment>
+        <SearchBox
+          updateSearchText={this.updateSearchText}
+          searchText={searchText}
+        />
+        <Table
+          rowsFound={rowsFound}
+          currentPageNumber={currentPageNumber}
+          rowsPerPage={rowsPerPage}
+        />
+        <PaginationBox
           currentPageNumber={currentPageNumber}
           totalNumberOfPages={totalNumberOfPages}
-          onChange={this.changeToPageNumber.bind(this)} />
-      </div>
-    )
+          setCurrentPageNumber={this.setCurrentPageNumber}
+          rowsPerPage={rowsPerPage}
+          setRowsPerPage={this.setRowsPerPage}
+        />
+      </Fragment>
+    );
   }
 }
 
-export default DataTable
+export default DataTable;

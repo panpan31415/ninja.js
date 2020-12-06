@@ -1,0 +1,23 @@
+// please don't focus on my design, I just want to demo BEM methodology
+.rows-per-page-input {
+  width: 200px;
+  display: flex;
+  height: 3.8rem;
+  justify-content: flex-end;
+  color: #9b4dca;
+  &__label {
+    line-height: 3.8rem;
+    margin-right: 0.5rem;
+    box-sizing: border-box;
+  }
+  &__input {
+    cursor: text;
+    width: 60px !important;
+    height: inherit;
+    color: #9b4dca;
+    font-weight: 700;
+    text-decoration: underline;
+    border: none !important;
+    appearance: none;
+  }
+}
